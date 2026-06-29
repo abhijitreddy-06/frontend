@@ -7,7 +7,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { Logo } from '../components/Logo';
 import { ScreenToggle } from '../components/ScreenToggle';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { SignInForm, SignUpForm } from './AuthForms';
+import { SignInForm, SignUpForm } from './AuthForms';  
 
 interface AuthScreenProps {
   onSignedIn?: () => void;
