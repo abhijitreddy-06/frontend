@@ -110,9 +110,9 @@ function LoadingDots() {
 }
 
 // ─── Sign In Form ─────────────────────────────────────────────────────────────
-interface SignInFormProps { c: Colors; isDark: boolean; }
+interface SignInFormProps { c: Colors; isDark: boolean; onSuccess?: () => void; }
 
-export function SignInForm({ c, isDark }: SignInFormProps) {
+export function SignInForm({ c, isDark, onSuccess }: SignInFormProps) {
   const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]   = useState(false);
@@ -130,8 +130,12 @@ export function SignInForm({ c, isDark }: SignInFormProps) {
   const submit = useCallback(() => {
     if (loading || done) return;
     setLoading(true);
-    setTimeout(() => { setLoading(false); setDone(true); }, 1400);
-  }, [loading, done]);
+    setTimeout(() => {
+      setLoading(false);
+      setDone(true);
+      setTimeout(() => onSuccess?.(), 600);
+    }, 1400);
+  }, [loading, done, onSuccess]);
 
   const iconColor = (focused: boolean) => focused ? c.primary : c.textMuted;
 
@@ -216,9 +220,9 @@ export function SignInForm({ c, isDark }: SignInFormProps) {
 }
 
 // ─── Sign Up Form ─────────────────────────────────────────────────────────────
-interface SignUpFormProps { c: Colors; isDark: boolean; }
+interface SignUpFormProps { c: Colors; isDark: boolean; onSuccess?: () => void; }
 
-export function SignUpForm({ c, isDark }: SignUpFormProps) {
+export function SignUpForm({ c, isDark, onSuccess }: SignUpFormProps) {
   const [name, setName]       = useState('');
   const [email, setEmail]     = useState('');
   const [password, setPw]     = useState('');
@@ -239,8 +243,12 @@ export function SignUpForm({ c, isDark }: SignUpFormProps) {
   const submit = useCallback(() => {
     if (loading || done) return;
     setLoading(true);
-    setTimeout(() => { setLoading(false); setDone(true); }, 1400);
-  }, [loading, done]);
+    setTimeout(() => {
+      setLoading(false);
+      setDone(true);
+      setTimeout(() => onSuccess?.(), 600);
+    }, 1400);
+  }, [loading, done, onSuccess]);
 
   const strength = password.length === 0 ? 0
     : password.length < 6 ? 1
