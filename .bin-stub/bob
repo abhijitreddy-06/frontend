@@ -1,0 +1,3 @@
+#!/bin/sh
+# stub — native build not available in this environment
+exit 0

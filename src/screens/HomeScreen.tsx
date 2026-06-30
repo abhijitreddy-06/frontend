@@ -1,452 +1,455 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet,
-  Dimensions, Platform,
+  View, Text, ScrollView, Pressable, StyleSheet, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withDelay,
-  withSpring, Easing, useAnimatedProps,
+  withSpring, Easing, interpolate, interpolateColor,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeContext';
-import { SpendingChart } from '../components/SpendingChart';
 import {
-  BellIcon, PlusCircleIcon, MinusCircleIcon, ArrowRightLeftIcon, ScanIcon,
-  TrendingUpIcon, TrendingDownIcon, HomeIcon, ListIcon, BarChart2Icon,
-  UserCircleIcon, PlusIcon, LightbulbIcon, ShoppingBagIcon, CoffeeIcon,
-  ZapIcon, CarIcon, ChevronRightIcon, ArrowDownLeftIcon, ArrowUpRightIcon,
+  MinusCircleIcon, PlusCircleIcon, CalendarCheckIcon, ListIcon,
+  BarChart2Icon, CreditCardIcon, PiggyBankIcon, ArrowRightLeftIcon,
+  HandshakeIcon, CheckSquareIcon, ActivityIcon, LockIcon,
+  NoteIcon, AlarmClockIcon, RepeatIcon, FolderIcon,
+  HomeIcon, SearchIcon, SettingsIcon, SunIcon, MoonIcon,
 } from '../components/Icons';
-import { Colors } from '../theme/colors';
 
 const { width: SCREEN_W } = Dimensions.get('window');
+const CARD_GAP = 12;
+const CARD_W = (SCREEN_W - 40 - CARD_GAP) / 2; // 20px padding each side
 
-// ── Animated counter ──────────────────────────────────────────────────────────
-const AnimatedText = Animated.createAnimatedComponent(Text);
+// ── Animated theme toggle ─────────────────────────────────────────────────────
+function ThemeTogglePill() {
+  const { isDark, toggle, c } = useTheme();
+  const progress = useSharedValue(isDark ? 1 : 0);
 
-function useCounter(target: number, delay = 0, duration = 1000) {
-  const value = useSharedValue(0);
   useEffect(() => {
-    value.value = withDelay(delay, withTiming(target, { duration, easing: Easing.out(Easing.cubic) }));
-  }, [target]);
-  return value;
-}
+    progress.value = withTiming(isDark ? 1 : 0, { duration: 300, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+  }, [isDark]);
 
-function CounterText({
-  value: sv, prefix = '', suffix = '', style,
-  decimals = 0,
-}: {
-  value: Animated.SharedValue<number>;
-  prefix?: string; suffix?: string;
-  style?: any; decimals?: number;
-}) {
-  const [display, setDisplay] = useState('0');
-  sv.addListener(0, v => {
-    setDisplay(v.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
-  });
-  useEffect(() => () => { sv.removeListener(0); }, []);
-  return <Text style={style}>{prefix}{display}{suffix}</Text>;
-}
+  const trackStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      ['#E2E8F0', '#1E2D40'],
+    ),
+  }));
 
-// ── Animated progress bar ─────────────────────────────────────────────────────
-function ProgressBar({ percent, color, delay = 0, c }: { percent: number; color: string; delay?: number; c: Colors }) {
-  const width = useSharedValue(0);
-  useEffect(() => {
-    width.value = withDelay(delay, withTiming(percent, { duration: 900, easing: Easing.out(Easing.cubic) }));
-  }, [percent]);
-  const barStyle = useAnimatedStyle(() => ({ width: `${width.value}%` as any }));
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(progress.value, [0, 1], [3, 27]) }],
+    backgroundColor: interpolateColor(progress.value, [0, 1], ['#FFFFFF', '#3B82F6']),
+  }));
+
+  const sunStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 0.5], [1, 0], 'clamp'),
+  }));
+
+  const moonStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0.5, 1], [0, 1], 'clamp'),
+  }));
+
   return (
-    <View style={[styles.progressTrack, { backgroundColor: c.border }]}>
-      <Animated.View style={[styles.progressFill, { backgroundColor: color }, barStyle]} />
-    </View>
+    <Pressable onPress={toggle} hitSlop={8}>
+      <Animated.View style={[styles.toggleTrack, trackStyle]}>
+        {/* Sun icon — left side */}
+        <Animated.View style={[styles.toggleIconLeft, sunStyle]}>
+          <SunIcon color="#F59E0B" size={12} strokeWidth={2.5} />
+        </Animated.View>
+        {/* Moon icon — right side */}
+        <Animated.View style={[styles.toggleIconRight, moonStyle]}>
+          <MoonIcon color="#93C5FD" size={12} strokeWidth={2.5} />
+        </Animated.View>
+        {/* Thumb */}
+        <Animated.View style={[styles.toggleThumb, thumbStyle]} />
+      </Animated.View>
+    </Pressable>
   );
 }
 
-// ── Fade-up card ──────────────────────────────────────────────────────────────
-function FadeCard({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: any }) {
+// ── Fade-up wrapper ───────────────────────────────────────────────────────────
+function FadeUp({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: any }) {
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(18);
+  const translateY = useSharedValue(16);
   useEffect(() => {
     const ease = Easing.bezier(0.4, 0, 0.2, 1);
-    opacity.value = withDelay(delay, withTiming(1, { duration: 400, easing: ease }));
-    translateY.value = withDelay(delay, withTiming(0, { duration: 400, easing: ease }));
+    opacity.value    = withDelay(delay, withTiming(1, { duration: 380, easing: ease }));
+    translateY.value = withDelay(delay, withTiming(0, { duration: 380, easing: ease }));
   }, []);
-  const anim = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ translateY: translateY.value }] }));
+  const anim = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
   return <Animated.View style={[anim, style]}>{children}</Animated.View>;
 }
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
-const CHART_DATA = {
-  week:  [420, 380, 510, 460, 390, 530, 480],
-  month: [3200, 2900, 3400, 3100, 2800, 3600, 3200, 3500, 3300, 3800, 3600, 3900],
-  year:  [28000, 31000, 29500, 33000, 30500, 34000, 32000, 35500, 33000, 36000, 34500, 38000],
-};
+// ── Service card ──────────────────────────────────────────────────────────────
+interface Service {
+  key: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ color: string; size?: number; strokeWidth?: number }>;
+  accent: string;        // icon tint
+  accentBg: string;      // light icon bg (always defined; overridden for dark in render)
+  accentBgDark: string;
+}
 
-const TRANSACTIONS = [
-  { id: 1, name: 'Amazon Shopping', category: 'Shopping', amount: -84.99,  date: 'Today, 2:30 PM',   icon: ShoppingBagIcon, color: '#8B5CF6' },
-  { id: 2, name: 'Salary Deposit',  category: 'Income',   amount: 4200.00, date: 'Today, 9:00 AM',   icon: ArrowDownLeftIcon, color: '#10B981' },
-  { id: 3, name: 'Starbucks Coffee',category: 'Food',     amount: -6.50,   date: 'Yesterday, 8:14 AM', icon: CoffeeIcon,  color: '#F59E0B' },
-  { id: 4, name: 'Electricity Bill', category: 'Utilities',amount: -112.00,date: 'Jun 27',           icon: ZapIcon,     color: '#EF4444' },
-  { id: 5, name: 'Uber Ride',        category: 'Transport',amount: -18.40, date: 'Jun 26',           icon: CarIcon,     color: '#3B82F6' },
+const SERVICES: Service[] = [
+  {
+    key: 'add_expense',
+    title: 'Add Expense',
+    description: 'Record a spending',
+    icon: MinusCircleIcon,
+    accent: '#EF4444',
+    accentBg: '#FEF2F2',
+    accentBgDark: 'rgba(239,68,68,0.12)',
+  },
+  {
+    key: 'add_income',
+    title: 'Add Income',
+    description: 'Log earnings',
+    icon: PlusCircleIcon,
+    accent: '#10B981',
+    accentBg: '#ECFDF5',
+    accentBgDark: 'rgba(16,185,129,0.12)',
+  },
+  {
+    key: 'planned',
+    title: 'Planned Expenses',
+    description: 'Future spending',
+    icon: CalendarCheckIcon,
+    accent: '#8B5CF6',
+    accentBg: '#F5F3FF',
+    accentBgDark: 'rgba(139,92,246,0.12)',
+  },
+  {
+    key: 'transactions',
+    title: 'Transactions',
+    description: 'Full history',
+    icon: ListIcon,
+    accent: '#3B82F6',
+    accentBg: '#EFF6FF',
+    accentBgDark: 'rgba(59,130,246,0.12)',
+  },
+  {
+    key: 'reports',
+    title: 'Reports',
+    description: 'Charts & insights',
+    icon: BarChart2Icon,
+    accent: '#0EA5E9',
+    accentBg: '#F0F9FF',
+    accentBgDark: 'rgba(14,165,233,0.12)',
+  },
+  {
+    key: 'budget',
+    title: 'Budget',
+    description: 'Spending limits',
+    icon: CreditCardIcon,
+    accent: '#F59E0B',
+    accentBg: '#FFFBEB',
+    accentBgDark: 'rgba(245,158,11,0.12)',
+  },
+  {
+    key: 'savings',
+    title: 'Savings Goals',
+    description: 'Save smarter',
+    icon: PiggyBankIcon,
+    accent: '#10B981',
+    accentBg: '#ECFDF5',
+    accentBgDark: 'rgba(16,185,129,0.12)',
+  },
+  {
+    key: 'debt',
+    title: 'Debt Tracker',
+    description: 'Track what you owe',
+    icon: ArrowRightLeftIcon,
+    accent: '#EF4444',
+    accentBg: '#FEF2F2',
+    accentBgDark: 'rgba(239,68,68,0.12)',
+  },
+  {
+    key: 'lending',
+    title: 'Lending Tracker',
+    description: 'Track who owes you',
+    icon: HandshakeIcon,
+    accent: '#F97316',
+    accentBg: '#FFF7ED',
+    accentBgDark: 'rgba(249,115,22,0.12)',
+  },
+  {
+    key: 'todo',
+    title: 'Todo',
+    description: 'Daily tasks',
+    icon: CheckSquareIcon,
+    accent: '#6366F1',
+    accentBg: '#EEF2FF',
+    accentBgDark: 'rgba(99,102,241,0.12)',
+  },
+  {
+    key: 'habits',
+    title: 'Habits',
+    description: 'Build routines',
+    icon: ActivityIcon,
+    accent: '#EC4899',
+    accentBg: '#FDF2F8',
+    accentBgDark: 'rgba(236,72,153,0.12)',
+  },
+  {
+    key: 'passwords',
+    title: 'Password Vault',
+    description: 'Secure storage',
+    icon: LockIcon,
+    accent: '#64748B',
+    accentBg: '#F8FAFC',
+    accentBgDark: 'rgba(100,116,139,0.14)',
+  },
+  {
+    key: 'notes',
+    title: 'Notes',
+    description: 'Quick notes',
+    icon: NoteIcon,
+    accent: '#F59E0B',
+    accentBg: '#FFFBEB',
+    accentBgDark: 'rgba(245,158,11,0.12)',
+  },
+  {
+    key: 'reminders',
+    title: 'Reminders',
+    description: 'Never forget',
+    icon: AlarmClockIcon,
+    accent: '#14B8A6',
+    accentBg: '#F0FDFA',
+    accentBgDark: 'rgba(20,184,166,0.12)',
+  },
+  {
+    key: 'subscriptions',
+    title: 'Subscriptions',
+    description: 'Recurring costs',
+    icon: RepeatIcon,
+    accent: '#8B5CF6',
+    accentBg: '#F5F3FF',
+    accentBgDark: 'rgba(139,92,246,0.12)',
+  },
+  {
+    key: 'documents',
+    title: 'Documents',
+    description: 'Store files',
+    icon: FolderIcon,
+    accent: '#F97316',
+    accentBg: '#FFF7ED',
+    accentBgDark: 'rgba(249,115,22,0.12)',
+  },
 ];
 
-const BUDGETS = [
-  { name: 'Shopping',  spent: 340, total: 500,  color: '#8B5CF6' },
-  { name: 'Food & Dining', spent: 280, total: 350, color: '#F59E0B' },
-  { name: 'Transport', spent: 95, total: 200,  color: '#3B82F6' },
-];
+function ServiceCard({
+  service, index, isDark, c, onPress,
+}: {
+  service: Service;
+  index: number;
+  isDark: boolean;
+  c: ReturnType<typeof useTheme>['c'];
+  onPress: () => void;
+}) {
+  const Icon = service.icon;
+  const scale = useSharedValue(1);
+  const pressed = useSharedValue(0);
 
-const NAV_ITEMS = [
-  { key: 'home',   label: 'Home',         Icon: HomeIcon },
-  { key: 'txns',   label: 'Transactions', Icon: ListIcon },
-  { key: 'add',    label: '',             Icon: PlusIcon },
+  const cardAnim = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: interpolate(pressed.value, [0, 1], [1, 0.88]),
+  }));
+
+  const handlePressIn = () => {
+    scale.value  = withSpring(0.96, { damping: 15, stiffness: 400 });
+    pressed.value = withTiming(1, { duration: 100 });
+  };
+  const handlePressOut = () => {
+    scale.value  = withSpring(1, { damping: 12, stiffness: 300 });
+    pressed.value = withTiming(0, { duration: 150 });
+  };
+
+  const iconBg = isDark ? service.accentBgDark : service.accentBg;
+
+  return (
+    <FadeUp delay={index * 35} style={{ width: CARD_W }}>
+      <Animated.View style={cardAnim}>
+        <Pressable
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={[
+            styles.serviceCard,
+            {
+              backgroundColor: c.card,
+              borderColor: c.border,
+              shadowColor: isDark ? '#000' : '#64748B',
+              shadowOpacity: isDark ? 0.25 : 0.06,
+            },
+          ]}
+        >
+          <View style={[styles.serviceIconWrap, { backgroundColor: iconBg }]}>
+            <Icon color={service.accent} size={24} strokeWidth={1.8} />
+          </View>
+          <Text style={[styles.serviceTitle, { color: c.text }]} numberOfLines={1}>
+            {service.title}
+          </Text>
+          <Text style={[styles.serviceDesc, { color: c.textMuted }]} numberOfLines={2}>
+            {service.description}
+          </Text>
+        </Pressable>
+      </Animated.View>
+    </FadeUp>
+  );
+}
+
+// ── Bottom nav ────────────────────────────────────────────────────────────────
+type NavKey = 'home' | 'analytics' | 'search' | 'settings';
+
+const NAV_ITEMS: { key: NavKey; label: string; Icon: React.ComponentType<any> }[] = [
+  { key: 'home',      label: 'Home',      Icon: HomeIcon },
   { key: 'analytics', label: 'Analytics', Icon: BarChart2Icon },
-  { key: 'profile',  label: 'Profile',   Icon: UserCircleIcon },
-] as const;
+  { key: 'search',    label: 'Search',    Icon: SearchIcon },
+  { key: 'settings',  label: 'Settings',  Icon: SettingsIcon },
+];
 
-type NavKey = typeof NAV_ITEMS[number]['key'];
-type ChartRange = 'week' | 'month' | 'year';
+function NavItem({
+  item, active, c, isDark, onPress,
+}: {
+  item: typeof NAV_ITEMS[0];
+  active: boolean;
+  c: ReturnType<typeof useTheme>['c'];
+  isDark: boolean;
+  onPress: () => void;
+}) {
+  const progress = useSharedValue(active ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withTiming(active ? 1 : 0, { duration: 220, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+  }, [active]);
+
+  const pillStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ scaleX: interpolate(progress.value, [0, 1], [0.5, 1]) }],
+  }));
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(progress.value, [0, 1], [0, -2]) }],
+  }));
+
+  const { Icon } = item;
+
+  return (
+    <Pressable onPress={onPress} style={styles.navItem}>
+      {/* Active indicator pill */}
+      <Animated.View style={[styles.navPill, { backgroundColor: c.primaryLight }, pillStyle]} />
+      <Animated.View style={iconStyle}>
+        <Icon
+          color={active ? c.primary : c.textMuted}
+          size={22}
+          strokeWidth={active ? 2.4 : 1.8}
+        />
+      </Animated.View>
+      <Text style={[
+        styles.navLabel,
+        {
+          color: active ? c.primary : c.textMuted,
+          fontFamily: active ? 'PlusJakartaSans_600SemiBold' : 'PlusJakartaSans_400Regular',
+        },
+      ]}>
+        {item.label}
+      </Text>
+    </Pressable>
+  );
+}
 
 // ── Main HomeScreen ───────────────────────────────────────────────────────────
 export function HomeScreen() {
   const { isDark, c } = useTheme();
   const [activeNav, setActiveNav] = useState<NavKey>('home');
-  const [chartRange, setChartRange] = useState<ChartRange>('month');
 
-  const balanceCount  = useCounter(12480.50, 200, 1100);
-  const incomeCount   = useCounter(4200, 300, 900);
-  const expenseCount  = useCounter(1840, 300, 900);
-
-  const fabScale = useSharedValue(1);
-  const fabStyle = useAnimatedStyle(() => ({ transform: [{ scale: fabScale.value }] }));
-
-  const pressFab = () => {
-    fabScale.value = withSpring(0.88, { damping: 8 });
-    setTimeout(() => { fabScale.value = withSpring(1, { damping: 10 }); }, 120);
-  };
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  });
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
-      {/* Scrollable body */}
-      <SafeAreaView style={styles.safe} edges={['top']}>
+      <SafeAreaView style={styles.safeTop} edges={['top']}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-
           {/* ── Header ── */}
-          <FadeCard delay={0}>
+          <FadeUp delay={0}>
             <View style={styles.header}>
-              <View>
+              {/* Left: greeting */}
+              <View style={styles.headerLeft}>
                 <Text style={[styles.greeting, { color: c.textSub }]}>Good Morning 👋</Text>
                 <Text style={[styles.userName, { color: c.text }]}>Alex Johnson</Text>
+                <Text style={[styles.dateText, { color: c.textMuted }]}>{today}</Text>
               </View>
+
+              {/* Right: theme toggle + avatar */}
               <View style={styles.headerRight}>
-                <Pressable style={[styles.iconBtn, { backgroundColor: c.card, borderColor: c.border }]}>
-                  <BellIcon color={c.textSub} size={20} />
-                  {/* Notification dot */}
-                  <View style={[styles.notifDot, { backgroundColor: c.expense }]} />
-                </Pressable>
-                <Pressable style={[styles.avatar, { backgroundColor: c.primaryLight, borderColor: c.primary }]}>
+                <ThemeTogglePill />
+                <Pressable style={[styles.avatar, {
+                  backgroundColor: c.primaryLight,
+                  borderColor: c.primary,
+                }]}>
                   <Text style={[styles.avatarText, { color: c.primary }]}>AJ</Text>
                 </Pressable>
               </View>
             </View>
-          </FadeCard>
+          </FadeUp>
 
-          {/* ── Balance Card ── */}
-          <FadeCard delay={80}>
-            <LinearGradient
-              colors={isDark ? ['#1E3A8A', '#1D4ED8'] : ['#2563EB', '#1D4ED8']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={[styles.balanceCard, styles.card]}
-            >
-              {/* Subtle grid overlay */}
-              <View style={styles.cardGridOverlay} pointerEvents="none" />
+          {/* ── Section label ── */}
+          <FadeUp delay={80}>
+            <Text style={[styles.sectionLabel, { color: c.textSub }]}>Services</Text>
+          </FadeUp>
 
-              <Text style={styles.balanceLabel}>Total Balance</Text>
-              <CounterText
-                value={balanceCount}
-                prefix="$"
-                decimals={2}
-                style={styles.balanceAmount}
+          {/* ── 2-column grid ── */}
+          <View style={styles.grid}>
+            {SERVICES.map((svc, i) => (
+              <ServiceCard
+                key={svc.key}
+                service={svc}
+                index={i}
+                isDark={isDark}
+                c={c}
+                onPress={() => {}}
               />
+            ))}
+          </View>
 
-              <View style={styles.balanceChangeRow}>
-                <TrendingUpIcon color="rgba(255,255,255,0.8)" size={14} />
-                <Text style={styles.balanceChange}>+2.4% this month</Text>
-              </View>
-
-              <View style={[styles.dividerLine, { backgroundColor: 'rgba(255,255,255,0.15)' }]} />
-
-              <View style={styles.balanceStats}>
-                <View style={styles.statBlock}>
-                  <View style={styles.statLabelRow}>
-                    <ArrowDownLeftIcon color="rgba(255,255,255,0.7)" size={13} />
-                    <Text style={styles.statLabel}>Income</Text>
-                  </View>
-                  <CounterText
-                    value={incomeCount}
-                    prefix="$"
-                    decimals={2}
-                    style={styles.statAmount}
-                  />
-                </View>
-                <View style={[styles.statDivider, { backgroundColor: 'rgba(255,255,255,0.15)' }]} />
-                <View style={styles.statBlock}>
-                  <View style={styles.statLabelRow}>
-                    <ArrowUpRightIcon color="rgba(255,255,255,0.7)" size={13} />
-                    <Text style={styles.statLabel}>Expenses</Text>
-                  </View>
-                  <CounterText
-                    value={expenseCount}
-                    prefix="$"
-                    decimals={2}
-                    style={styles.statAmount}
-                  />
-                </View>
-              </View>
-            </LinearGradient>
-          </FadeCard>
-
-          {/* ── Quick Actions ── */}
-          <FadeCard delay={160}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Quick Actions</Text>
-            </View>
-            <View style={styles.quickActions}>
-              {[
-                { label: 'Add\nExpense', Icon: MinusCircleIcon, color: c.expense, bg: isDark ? 'rgba(239,68,68,0.12)' : '#FEF2F2' },
-                { label: 'Add\nIncome',  Icon: PlusCircleIcon,  color: c.success, bg: isDark ? 'rgba(16,185,129,0.12)' : '#ECFDF5' },
-                { label: 'Transfer',     Icon: ArrowRightLeftIcon, color: c.primary, bg: isDark ? 'rgba(59,130,246,0.12)' : '#EFF6FF' },
-                { label: 'Scan\nReceipt',Icon: ScanIcon,        color: c.warning, bg: isDark ? 'rgba(245,158,11,0.12)' : '#FFFBEB' },
-              ].map(({ label, Icon, color, bg }) => (
-                <Pressable
-                  key={label}
-                  style={({ pressed }) => [
-                    styles.quickAction,
-                    { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.8 : 1,
-                      transform: [{ scale: pressed ? 0.96 : 1 }] },
-                  ]}
-                >
-                  <View style={[styles.quickActionIcon, { backgroundColor: bg }]}>
-                    <Icon color={color} size={22} />
-                  </View>
-                  <Text style={[styles.quickActionLabel, { color: c.textSub }]}>{label}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </FadeCard>
-
-          {/* ── Spending Overview ── */}
-          <FadeCard delay={240} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-            <View style={styles.cardHeader}>
-              <View>
-                <Text style={[styles.cardTitle, { color: c.text }]}>Spending Overview</Text>
-                <Text style={[styles.cardSub, { color: c.textMuted }]}>
-                  {chartRange === 'week' ? 'This week' : chartRange === 'month' ? 'This month' : 'This year'}
-                </Text>
-              </View>
-              <View style={[styles.rangeToggle, { backgroundColor: c.bgSubtle }]}>
-                {(['week', 'month', 'year'] as ChartRange[]).map(r => (
-                  <Pressable
-                    key={r}
-                    onPress={() => setChartRange(r)}
-                    style={[
-                      styles.rangeBtn,
-                      chartRange === r && { backgroundColor: c.card,
-                        shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.08, shadowRadius: 3, elevation: 2 },
-                    ]}
-                  >
-                    <Text style={[styles.rangeBtnText, {
-                      color: chartRange === r ? c.primary : c.textMuted,
-                      fontFamily: chartRange === r ? 'PlusJakartaSans_600SemiBold' : 'PlusJakartaSans_400Regular',
-                    }]}>
-                      {r.charAt(0).toUpperCase() + r.slice(1)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-
-            <SpendingChart data={CHART_DATA[chartRange]} c={c} />
-
-            {/* X-axis labels */}
-            <View style={styles.chartLabels}>
-              {(chartRange === 'week'
-                ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                : chartRange === 'month'
-                ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-                : ['Q1', '', 'Q2', '', 'Q3', '', 'Q4', '', '', '', '', '']
-              ).map((l, i) => (
-                <Text key={i} style={[styles.chartLabel, { color: c.textMuted }]}>{l}</Text>
-              ))}
-            </View>
-          </FadeCard>
-
-          {/* ── Recent Transactions ── */}
-          <FadeCard delay={320}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Transactions</Text>
-              <Pressable style={styles.viewAllBtn}>
-                <Text style={[styles.viewAllText, { color: c.primary }]}>View All</Text>
-                <ChevronRightIcon color={c.primary} size={14} />
-              </Pressable>
-            </View>
-
-            <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border, gap: 0 }]}>
-              {TRANSACTIONS.map((tx, idx) => {
-                const Icon = tx.icon;
-                const isIncome = tx.amount > 0;
-                return (
-                  <View key={tx.id}>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.txRow,
-                        { opacity: pressed ? 0.75 : 1 },
-                      ]}
-                    >
-                      <View style={[styles.txIcon, { backgroundColor: tx.color + '18' }]}>
-                        <Icon color={tx.color} size={18} />
-                      </View>
-                      <View style={styles.txInfo}>
-                        <Text style={[styles.txName, { color: c.text }]}>{tx.name}</Text>
-                        <Text style={[styles.txCat, { color: c.textMuted }]}>{tx.category} · {tx.date}</Text>
-                      </View>
-                      <Text style={[styles.txAmount, { color: isIncome ? c.success : c.expense }]}>
-                        {isIncome ? '+' : ''}${Math.abs(tx.amount).toFixed(2)}
-                      </Text>
-                    </Pressable>
-                    {idx < TRANSACTIONS.length - 1 && (
-                      <View style={[styles.txDivider, { backgroundColor: c.border }]} />
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          </FadeCard>
-
-          {/* ── Budget Progress ── */}
-          <FadeCard delay={400}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Budget Progress</Text>
-              <Pressable style={styles.viewAllBtn}>
-                <Text style={[styles.viewAllText, { color: c.primary }]}>Manage</Text>
-                <ChevronRightIcon color={c.primary} size={14} />
-              </Pressable>
-            </View>
-
-            <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-              {BUDGETS.map((b, i) => {
-                const pct = Math.round((b.spent / b.total) * 100);
-                const over = pct >= 80;
-                return (
-                  <View key={b.name} style={i > 0 ? { marginTop: 16 } : undefined}>
-                    <View style={styles.budgetRow}>
-                      <View style={[styles.budgetDot, { backgroundColor: b.color }]} />
-                      <Text style={[styles.budgetName, { color: c.text }]}>{b.name}</Text>
-                      <Text style={[styles.budgetPct, { color: over ? c.expense : c.textMuted }]}>
-                        {pct}%
-                      </Text>
-                    </View>
-                    <ProgressBar
-                      percent={pct}
-                      color={over ? c.expense : b.color}
-                      delay={400 + i * 120}
-                      c={c}
-                    />
-                    <View style={styles.budgetAmounts}>
-                      <Text style={[styles.budgetSpent, { color: c.textSub }]}>${b.spent} spent</Text>
-                      <Text style={[styles.budgetTotal, { color: c.textMuted }]}>of ${b.total}</Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          </FadeCard>
-
-          {/* ── Smart Insight ── */}
-          <FadeCard delay={480}>
-            <LinearGradient
-              colors={isDark ? ['#0F1929', '#0B1220'] : ['#EFF6FF', '#F8FAFC']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={[styles.insightCard, { borderColor: isDark ? c.border : '#BFDBFE' }]}
-            >
-              <View style={[styles.insightIcon, { backgroundColor: isDark ? 'rgba(59,130,246,0.15)' : '#DBEAFE' }]}>
-                <LightbulbIcon color={c.primary} size={20} />
-              </View>
-              <View style={styles.insightBody}>
-                <Text style={[styles.insightTitle, { color: c.text }]}>Smart Insight</Text>
-                <Text style={[styles.insightText, { color: c.textSub }]}>
-                  You've spent 32% less on dining this month. Keep it up — you're on track to save an extra{' '}
-                  <Text style={{ color: c.success, fontFamily: 'PlusJakartaSans_700Bold' }}>$120</Text> by month-end.
-                </Text>
-              </View>
-            </LinearGradient>
-          </FadeCard>
-
-          {/* Bottom spacer so content clears FAB + nav */}
-          <View style={{ height: 100 }} />
+          {/* Bottom spacer */}
+          <View style={{ height: 24 }} />
         </ScrollView>
       </SafeAreaView>
 
-      {/* ── FAB ── */}
-      <Animated.View style={[styles.fab, fabStyle]}>
-        <Pressable onPress={pressFab} style={styles.fabInner}>
-          <LinearGradient
-            colors={[c.primary, c.primaryHover]}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={styles.fabGradient}
-          >
-            <PlusIcon color="#fff" size={26} strokeWidth={2.5} />
-          </LinearGradient>
-        </Pressable>
-      </Animated.View>
-
-      {/* ── Bottom Navigation ── */}
-      <View style={[styles.bottomNav, {
-        backgroundColor: c.card,
-        borderTopColor: c.border,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: isDark ? 0.4 : 0.06,
-        shadowRadius: 16,
-        elevation: 12,
-      }]}>
-        <SafeAreaView edges={['bottom']}>
-          <View style={styles.navItems}>
-            {NAV_ITEMS.map(({ key, label, Icon }) => {
-              if (key === 'add') {
-                return <View key="add" style={styles.navPlaceholder} />;
-              }
-              const active = activeNav === key;
-              return (
-                <Pressable
-                  key={key}
-                  onPress={() => setActiveNav(key as NavKey)}
-                  style={styles.navItem}
-                >
-                  <Icon
-                    color={active ? c.primary : c.textMuted}
-                    size={22}
-                    strokeWidth={active ? 2.5 : 1.8}
-                  />
-                  <Text style={[
-                    styles.navLabel,
-                    { color: active ? c.primary : c.textMuted,
-                      fontFamily: active ? 'PlusJakartaSans_600SemiBold' : 'PlusJakartaSans_400Regular' },
-                  ]}>
-                    {label}
-                  </Text>
-                  {active && (
-                    <View style={[styles.navDot, { backgroundColor: c.primary }]} />
-                  )}
-                </Pressable>
-              );
-            })}
+      {/* ── Floating Bottom Navigation ── */}
+      <View
+        style={[styles.navWrapper, {
+          shadowColor: isDark ? '#000' : '#64748B',
+          shadowOpacity: isDark ? 0.5 : 0.1,
+        }]}
+        pointerEvents="box-none"
+      >
+        <SafeAreaView edges={['bottom']} style={styles.navSafe}>
+          <View style={[styles.navBar, {
+            backgroundColor: c.card,
+            borderColor: c.border,
+          }]}>
+            {NAV_ITEMS.map(item => (
+              <NavItem
+                key={item.key}
+                item={item}
+                active={activeNav === item.key}
+                c={c}
+                isDark={isDark}
+                onPress={() => setActiveNav(item.key)}
+              />
+            ))}
           </View>
         </SafeAreaView>
       </View>
@@ -455,99 +458,130 @@ export function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  root:        { flex: 1 },
-  safe:        { flex: 1 },
-  scroll:      { flex: 1 },
-  scrollContent: { padding: 20, gap: 16 },
+  root: { flex: 1 },
+  safeTop: { flex: 1 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 },
 
   // Header
-  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  greeting:    { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium' },
-  userName:    { fontSize: 22, fontFamily: 'PlusJakartaSans_800ExtraBold', marginTop: 2 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconBtn:     { width: 40, height: 40, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  notifDot:    { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: '#fff' },
-  avatar:      { width: 40, height: 40, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  avatarText:  { fontSize: 13, fontFamily: 'PlusJakartaSans_700Bold' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+    gap: 12,
+  },
+  headerLeft: { flex: 1 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 2 },
+  greeting: { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', marginBottom: 3 },
+  userName: { fontSize: 22, fontFamily: 'PlusJakartaSans_800ExtraBold', letterSpacing: -0.3, lineHeight: 28 },
+  dateText: { fontSize: 12, fontFamily: 'PlusJakartaSans_400Regular', marginTop: 3 },
 
-  // Card base
-  card: { borderRadius: 20, borderWidth: 1, padding: 18 },
+  // Avatar
+  avatar: {
+    width: 42, height: 42, borderRadius: 13, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  avatarText: { fontSize: 13, fontFamily: 'PlusJakartaSans_700Bold' },
 
-  // Balance card
-  balanceCard:    { borderWidth: 0 },
-  cardGridOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 20 },
-  balanceLabel:   { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', color: 'rgba(255,255,255,0.72)', marginBottom: 8 },
-  balanceAmount:  { fontSize: 38, fontFamily: 'PlusJakartaSans_800ExtraBold', color: '#fff', letterSpacing: -1 },
-  balanceChangeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
-  balanceChange:  { fontSize: 12, fontFamily: 'PlusJakartaSans_500Medium', color: 'rgba(255,255,255,0.72)' },
-  dividerLine:    { height: 1, marginVertical: 16 },
-  balanceStats:   { flexDirection: 'row', gap: 0 },
-  statBlock:      { flex: 1 },
-  statLabelRow:   { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 },
-  statLabel:      { fontSize: 12, fontFamily: 'PlusJakartaSans_500Medium', color: 'rgba(255,255,255,0.65)' },
-  statAmount:     { fontSize: 18, fontFamily: 'PlusJakartaSans_700Bold', color: '#fff' },
-  statDivider:    { width: 1, marginHorizontal: 20 },
+  // Animated theme toggle
+  toggleTrack: {
+    width: 54, height: 30, borderRadius: 15,
+    justifyContent: 'center',
+    // icons sit on either side
+  },
+  toggleThumb: {
+    position: 'absolute',
+    width: 24, height: 24, borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  toggleIconLeft: {
+    position: 'absolute',
+    left: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toggleIconRight: {
+    position: 'absolute',
+    right: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-  // Quick actions
-  sectionHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle:   { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold' },
-  quickActions:   { flexDirection: 'row', gap: 10 },
-  quickAction:    { flex: 1, borderRadius: 16, borderWidth: 1, padding: 12, alignItems: 'center', gap: 9,
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
-  quickActionIcon: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  quickActionLabel:{ fontSize: 11, fontFamily: 'PlusJakartaSans_600SemiBold', textAlign: 'center', lineHeight: 15 },
+  // Section label
+  sectionLabel: {
+    fontSize: 11.5,
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 14,
+  },
 
-  // Chart
-  cardHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  cardTitle:     { fontSize: 16, fontFamily: 'PlusJakartaSans_700Bold' },
-  cardSub:       { fontSize: 12, fontFamily: 'PlusJakartaSans_400Regular', marginTop: 2 },
-  rangeToggle:   { flexDirection: 'row', borderRadius: 10, padding: 3 },
-  rangeBtn:      { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7 },
-  rangeBtnText:  { fontSize: 12 },
-  chartLabels:   { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
-  chartLabel:    { fontSize: 10, fontFamily: 'PlusJakartaSans_400Regular' },
-
-  // Transactions
-  viewAllBtn:    { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  viewAllText:   { fontSize: 13, fontFamily: 'PlusJakartaSans_600SemiBold' },
-  txRow:         { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 18, gap: 12 },
-  txIcon:        { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  txInfo:        { flex: 1 },
-  txName:        { fontSize: 14, fontFamily: 'PlusJakartaSans_600SemiBold' },
-  txCat:         { fontSize: 11.5, fontFamily: 'PlusJakartaSans_400Regular', marginTop: 2 },
-  txAmount:      { fontSize: 14, fontFamily: 'PlusJakartaSans_700Bold' },
-  txDivider:     { height: 1, marginHorizontal: 18 },
-
-  // Budget
-  budgetRow:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  budgetDot:     { width: 8, height: 8, borderRadius: 4 },
-  budgetName:    { flex: 1, fontSize: 13.5, fontFamily: 'PlusJakartaSans_600SemiBold' },
-  budgetPct:     { fontSize: 12, fontFamily: 'PlusJakartaSans_700Bold' },
-  progressTrack: { height: 6, borderRadius: 99, overflow: 'hidden' },
-  progressFill:  { height: 6, borderRadius: 99 },
-  budgetAmounts: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
-  budgetSpent:   { fontSize: 11.5, fontFamily: 'PlusJakartaSans_500Medium' },
-  budgetTotal:   { fontSize: 11.5, fontFamily: 'PlusJakartaSans_400Regular' },
-
-  // Insight
-  insightCard:   { flexDirection: 'row', borderRadius: 20, borderWidth: 1, padding: 18, gap: 14, alignItems: 'flex-start' },
-  insightIcon:   { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  insightBody:   { flex: 1 },
-  insightTitle:  { fontSize: 14, fontFamily: 'PlusJakartaSans_700Bold', marginBottom: 5 },
-  insightText:   { fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', lineHeight: 20 },
-
-  // FAB
-  fab:        { position: 'absolute', bottom: 80, alignSelf: 'center', zIndex: 50 },
-  fabInner:   { borderRadius: 28, overflow: 'hidden',
-                shadowColor: '#2563EB', shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.45, shadowRadius: 16, elevation: 12 },
-  fabGradient:{ width: 58, height: 58, alignItems: 'center', justifyContent: 'center', borderRadius: 28 },
+  // Service grid
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: CARD_GAP,
+  },
+  serviceCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    gap: 10,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  serviceIconWrap: {
+    width: 48, height: 48, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  serviceTitle: {
+    fontSize: 14,
+    fontFamily: 'PlusJakartaSans_700Bold',
+    lineHeight: 18,
+  },
+  serviceDesc: {
+    fontSize: 12,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    lineHeight: 17,
+  },
 
   // Bottom nav
-  bottomNav:  { position: 'absolute', bottom: 0, left: 0, right: 0 },
-  navItems:   { flexDirection: 'row', paddingTop: 10, paddingHorizontal: 8 },
-  navItem:    { flex: 1, alignItems: 'center', gap: 4, paddingBottom: 4 },
-  navPlaceholder: { flex: 1 },
-  navLabel:   { fontSize: 10.5 },
-  navDot:     { width: 4, height: 4, borderRadius: 2, position: 'absolute', bottom: 0 },
+  navWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 16,
+    right: 16,
+    shadowOffset: { width: 0, height: -4 },
+    shadowRadius: 20,
+    borderRadius: 24,
+  },
+  navSafe: { borderRadius: 24 },
+  navBar: {
+    flexDirection: 'row',
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  navItem: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    gap: 4, position: 'relative', paddingVertical: 2,
+  },
+  navPill: {
+    position: 'absolute',
+    top: -6,
+    height: 3,
+    width: 24,
+    borderRadius: 99,
+  },
+  navLabel: { fontSize: 10.5 },
 });
