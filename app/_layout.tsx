@@ -3,7 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, AuthProvider } from '../context';
-import { useTheme } from '../context';
+import { useTheme } from '../context'
+import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 
 function RootNavigator() {
   const { isDark } = useTheme();
@@ -36,6 +37,7 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  useFrameworkReady();
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
