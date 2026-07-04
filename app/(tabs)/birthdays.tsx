@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, Search, SortAsc, CalendarDays, Cake, Filter } from 'lucide-react-native';
+import { Plus, Search, ListSortAscending as SortAsc, CalendarDays, Cake, ListFilter as Filter } from 'lucide-react-native';
 import { useTheme } from '../../context';
 import { useBirthdays } from '../../hooks';
 import { BirthdayCard, FloatingNav, EmptyState } from '../../components/shared';

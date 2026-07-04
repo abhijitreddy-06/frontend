@@ -1,6 +1,6 @@
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Tabs } from 'expo-router';
-import { Home, CalendarDays, PieChart, Settings, User } from 'lucide-react-native';
+import { Hop as Home, CalendarDays, ChartPie as PieChart, Settings, User } from 'lucide-react-native';
 import { useTheme } from '../../context';
 import { HeaderRight } from '../../components/shared';
 

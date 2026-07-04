@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
-import { Home, CalendarDays, PieChart, Settings, User } from 'lucide-react-native';
+import { Hop as Home, CalendarDays, ChartPie as PieChart, Settings, User } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context';
 import { SPACING } from '../../constants';
