@@ -16,7 +16,7 @@ interface BirthdayCardProps {
 
 export function BirthdayCard({ birthday, onPress, compact = false }: BirthdayCardProps) {
   const { isDark, colors } = useTheme();
-  const countdown = useCountdown(birthday, 60000); // Update every minute
+  const countdown = useCountdown(birthday, 60000);
   const initials = getInitials(birthday.name);
   const message = getBirthdayMessage(birthday);
   const formattedDate = formatDate(birthday);
@@ -165,7 +165,6 @@ const styles = StyleSheet.create({
     marginLeft: 52 + SPACING.md,
     lineHeight: 18,
   },
-  // Card for today's birthday
   avatarContainer: {
     position: 'relative',
     alignItems: 'center',
@@ -190,7 +189,7 @@ const styles = StyleSheet.create({
   celebrationIcon: {
     position: 'absolute',
     bottom: -4,
-    right: widthPercent(-25),
+    right: -25,
     backgroundColor: 'rgba(255,255,255,0.25)',
     padding: 8,
     borderRadius: 20,
@@ -236,7 +235,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     color: 'rgba(255,255,255,0.8)',
   },
-  // Compact card styles
   compactCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -281,8 +279,3 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.xs,
   },
 });
-
-function widthPercent(percent: number) {
-  // Helper for positioning
-  return percent - percent;
-}

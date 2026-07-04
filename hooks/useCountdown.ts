@@ -8,10 +8,8 @@ export function useCountdown(birthday: Birthday, updateInterval = 1000) {
   useEffect(() => {
     const update = () => setCountdown(calculateCountdown(birthday));
 
-    // Update immediately
     update();
 
-    // Set up interval for real-time updates
     const interval = setInterval(update, updateInterval);
 
     return () => clearInterval(interval);

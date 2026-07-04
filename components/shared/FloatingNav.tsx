@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
-import { Hop as Home, CalendarDays, ChartPie as PieChart, Settings, User } from 'lucide-react-native';
+import { Home, CalendarDays, PieChart, Settings, User } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context';
 import { SPACING } from '../../constants';
@@ -50,13 +50,6 @@ export function FloatingNav() {
                 ) : (
                   <Icon size={22} color={isDark ? '#9CA3AF' : '#6B7280'} strokeWidth={2} />
                 )}
-              </View>
-              <View style={[styles.labelContainer, active && styles.activeLabelContainer]}>
-                <Icon
-                  size={4}
-                  color={active ? colors.primary : 'transparent'}
-                  strokeWidth={4}
-                />
               </View>
             </TouchableOpacity>
           );
@@ -130,13 +123,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  labelContainer: {
-    marginTop: SPACING.xs,
-    height: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activeLabelContainer: {},
   profileButton: {
     marginLeft: SPACING.sm,
   },

@@ -5,10 +5,8 @@ export function calculateCountdown(birthday: Birthday): Countdown {
   const now = new Date();
   const currentYear = now.getFullYear();
 
-  // Create date for this year's birthday
   let nextBirthday = new Date(currentYear, birthday.month - 1, birthday.day);
 
-  // If birthday has passed this year, use next year
   if (nextBirthday < now) {
     nextBirthday = new Date(currentYear + 1, birthday.month - 1, birthday.day);
   }
@@ -19,13 +17,11 @@ export function calculateCountdown(birthday: Birthday): Countdown {
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-  // Calculate age if birth year is known
   let age: number | undefined;
   if (birthday.year) {
     age = nextBirthday.getFullYear() - birthday.year;
   }
 
-  // Check if today or tomorrow
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const birthdayDate = new Date(nextBirthday.getFullYear(), nextBirthday.getMonth(), nextBirthday.getDate());
   const daysDiff = Math.round((birthdayDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));

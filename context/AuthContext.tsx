@@ -12,28 +12,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_STORAGE_KEY = '@user';
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadUser();
+    // Simulate checking for stored session
+    setIsLoading(false);
   }, []);
 
-  const loadUser = async () => {
-    try {
-      // Check for stored user session
-      // For now, simulating no stored session
-      setIsLoading(false);
-    } catch {
-      setIsLoading(false);
-    }
-  };
-
   const login = async (email: string, _password: string): Promise<boolean> => {
-    // Mock login - will connect to backend later
     const mockUser: User = {
       id: '1',
       email,
@@ -45,7 +33,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = async (name: string, email: string, _password: string): Promise<boolean> => {
-    // Mock signup - will connect to backend later
     const mockUser: User = {
       id: '1',
       email,

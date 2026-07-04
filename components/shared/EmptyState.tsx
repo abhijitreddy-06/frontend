@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../context';
 import { SPACING, FONT_SIZE, BORDER_RADIUS } from '../../constants';
-import { CalendarDays, Cake, PartyPopper, Search, CircleAlert as AlertCircle } from 'lucide-react-native';
+import { CalendarDays, Cake, PartyPopper, Search, AlertCircle } from 'lucide-react-native';
 
 interface EmptyStateProps {
   icon?: 'cake' | 'calendar' | 'party' | 'search' | 'alert';

@@ -1,9 +1,5 @@
 import { Birthday } from '../types';
-import { generateId } from '../utils';
 
-const BIRTHDAYS_STORAGE_KEY = '@birthdays';
-
-// Mock data for development
 const mockBirthdays: Birthday[] = [
   {
     id: '1',
@@ -76,7 +72,6 @@ class BirthdayService {
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    // Start with mock data for development
     this.birthdays = [...mockBirthdays];
     this.initialized = true;
   }
@@ -96,7 +91,7 @@ class BirthdayService {
     const now = new Date().toISOString();
     const birthday: Birthday = {
       ...data,
-      id: generateId(),
+      id: Date.now().toString(36) + Math.random().toString(36).substr(2),
       createdAt: now,
       updatedAt: now,
     };

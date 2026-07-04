@@ -1,10 +1,9 @@
 {
   "expo": {
-    "name": "BirthdayTracker",
+    "name": "Birthday Tracker",
     "slug": "birthday-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "scheme": "birthdaytracker",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -13,15 +12,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#1a1a2e",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#1a1a2e"
       },
       "package": "com.birthdaytracker.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
     "plugins": [

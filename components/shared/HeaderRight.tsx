@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Sun, Moon, User } from 'lucide-react-native';
 import { useTheme, useAuth } from '../../context';
-import { SPACING, FONT_SIZE } from '../../constants';
+import { SPACING } from '../../constants';
 
 interface HeaderRightProps {
   showThemeToggle?: boolean;
